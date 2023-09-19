@@ -1,5 +1,7 @@
 package com.osttra.controller;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -29,6 +31,9 @@ public class UserGroupController {
 
 	@Autowired
 	CustomUserGroupDetailsService customUserGroupDetailsService;
+	
+	@Autowired
+	userdetailservice userDetailsService;
 
 	@Autowired
 	usergroupdetailservice usergroupdetailservice;
@@ -41,6 +46,16 @@ public class UserGroupController {
 
 		try {
 
+	        List<User> users = new ArrayList<>(userGroup.getUsers());
+	        List<User> newUserList = new ArrayList<>();
+	        
+	        for (User user : users) {
+	            User usertobeadded = userDetailsService.getUserById(user.getUsername());
+	            newUserList.add(usertobeadded);
+	        }
+	        
+	        userGroup.setUsers(new HashSet<>(newUserList));
+
 			UserGroup savedUserGroup = usergroupdetailservice.saveUserGroup(userGroup);
 
 			CustomResponse<UserGroup> successResponse = new CustomResponse<>(savedUserGroup, "User group added successfully", 200);
@@ -50,7 +65,6 @@ public class UserGroupController {
 
 			CustomResponse<String> errorResponse = new CustomResponse<>("", "Bad Request: " + e.getMessage(), 400);
 			return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-
 		} catch (Exception e) {
 
 			CustomResponse<String> errorResponse = new CustomResponse<>("", "Internal Server Error", 500);
@@ -91,7 +105,7 @@ public class UserGroupController {
 	@PreAuthorize("hasRole('ADMIN')")
 	@GetMapping("/{usergroupid}/users")
 	@ResponseBody
-	public ResponseEntity<?> getUserGroups(@PathVariable Long usergroupid) {
+	public ResponseEntity<?> getUserGroups(@PathVariable String usergroupid) {
 		
 		try {
 			
@@ -128,7 +142,7 @@ public class UserGroupController {
 	@PreAuthorize("hasRole('ADMIN')")
 	@GetMapping("findusergroup/{usergroupid}")
 	@ResponseBody
-	public ResponseEntity<?> getSpecificUserGroup(@PathVariable Long usergroupid) {
+	public ResponseEntity<?> getSpecificUserGroup(@PathVariable String usergroupid) {
 	    try {
 	    	
 	        UserGroup userGroup = usergroupdetailservice.getUserGroupById(usergroupid);
@@ -162,11 +176,9 @@ public class UserGroupController {
 	
 	@PreAuthorize("hasRole('ADMIN')")
 	@PutMapping("/updategroup/{usergroupid}")
-	public ResponseEntity<?> updateUserGroup(@PathVariable Long usergroupid, @RequestBody UserGroup updatedUserGroup) {
+	public ResponseEntity<?> updateUserGroup(@PathVariable String usergroupid, @RequestBody UserGroup updatedUserGroup) {
 		
 		try {
-			
-			System.out.println(updatedUserGroup.getUsers());
 			
 			UserGroup existingUserGroup = usergroupdetailservice.getUserGroupById(usergroupid);
 
@@ -199,41 +211,5 @@ public class UserGroupController {
 	    }
 
 	}
-	
-	//////////////////////////////////////// DELETE USER //////////////////////////////////////////////////////////////////////////
-
-	
-	@PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/deletegroup/{usergroupid}")
-    public ResponseEntity<?> deleteUserGroup(@PathVariable Long usergroupid) {
-		
-		try {
-			
-			UserGroup userGroupToDelete = usergroupdetailservice.getUserGroupById(usergroupid);
-
-	        if (userGroupToDelete == null) {
-	        	
-	        	CustomResponse<String> errorResponse = new CustomResponse<>("", "User group not found", 404);
-	            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-	        }
-
-	        usergroupdetailservice.deleteUserGroup(usergroupid);
-
-	        CustomResponse<UserGroup> successResponse = new CustomResponse<UserGroup>(userGroupToDelete, "User deleted successfully", 200);
-	        return new ResponseEntity<>(successResponse, HttpStatus.OK);
-			
-		} catch (IllegalArgumentException e) {
-
-	        CustomResponse<String> errorResponse = new CustomResponse<>("", "Bad Request: " + e.getMessage(), 400);
-	        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-	        
-	    } catch (Exception e) {
-
-	        CustomResponse<String> errorResponse = new CustomResponse<>("", "Internal Server Error", 500);
-	        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
-	        
-	    }
-     
-    }
 	
 }

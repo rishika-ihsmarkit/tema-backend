@@ -88,11 +88,7 @@ public class SecurityConfig { // extends WebSecurityConfigurerAdapter {
 						.antMatchers("/api/auth/**").permitAll()
 						.antMatchers("/api/test/**").permitAll()
 						.antMatchers("/signin").permitAll()
-						.anyRequest().authenticated())
-				.logout()
-	            .logoutUrl("/api/auth/logout") // Specify your custom logout URL
-	            .logoutSuccessUrl("/") // Redirect to a success URL after logout (you can change this URL)
-	            .permitAll();
+						.anyRequest().authenticated());
 
 		http.authenticationProvider(authenticationProvider());
 

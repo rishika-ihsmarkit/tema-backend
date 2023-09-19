@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.osttra.entity.UserGroup;
 
 @Repository
-public interface userGroupRepository extends JpaRepository<UserGroup, Long>{
+public interface userGroupRepository extends JpaRepository<UserGroup, String>{
 
 }

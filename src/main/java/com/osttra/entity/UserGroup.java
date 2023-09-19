@@ -29,8 +29,7 @@ import lombok.ToString;
 public class UserGroup {
 
 		@Id
-		@GeneratedValue(strategy = GenerationType.IDENTITY)
-		private Long groupid; 
+		private String groupid; 
 		private String groupname;
 		private String description;
 		

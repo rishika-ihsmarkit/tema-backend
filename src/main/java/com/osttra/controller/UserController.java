@@ -1,6 +1,8 @@
 package com.osttra.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,28 +20,44 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.osttra.entity.User;
 import com.osttra.entity.UserGroup;
 import com.osttra.helper.JWTHelper;
+import com.osttra.repository.UserRepository;
 import com.osttra.service.CustomUserDetailsService;
 import com.osttra.service.userdetailservice;
+import com.osttra.service.usergroupdetailservice;
 import com.osttra.to.CustomResponse;
 import com.osttra.to.JWTRequest;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @RestController
 public class UserController {
 
 	@Autowired
 	userdetailservice userDetailsService;
+	
+	@Autowired
+	usergroupdetailservice usergroupdetailservice;
 
 	@Autowired
 	AuthenticationManager authenticationManager;
 
 	@Autowired
 	CustomUserDetailsService customUserDetailsService;
+	
+	@Autowired
+	UserRepository userRepository;
 
 	@Autowired
 	JWTHelper jwtHelper;
@@ -86,7 +104,7 @@ public class UserController {
 				user.setPassword(encodedPassword);
 
 				User savedUser = userDetailsService.saveUser(user);
-
+				
 				CustomResponse<User> successResponse = new CustomResponse<>(savedUser, "User registered successfully", 200);
 		        return new ResponseEntity<>(successResponse, HttpStatus.OK);
 	            
@@ -115,12 +133,16 @@ public class UserController {
 	@PreAuthorize("hasRole('ADMIN')")
 	@GetMapping(value = "/all")
 	@ResponseBody
-	public ResponseEntity<?> getAllUser() {
+	public ResponseEntity<?> getAllUser(@RequestParam(defaultValue = "1") int pageNumber) 
+	{
 		try{
 			
-			List<User> users = userDetailsService.getAllUser();
+			Pageable paging = PageRequest.of(pageNumber-1, 1, Sort.by("username").ascending());
+			Page<User> page = userRepository.findAll(paging);
 
-			CustomResponse<List<User>> successResponse = new CustomResponse<>(users, "Listed all users", 200);
+	        System.out.println(page.getContent());
+
+			CustomResponse<List<User>> successResponse = new CustomResponse<>(page.getContent(), "Listed all users", 200);
 	        return new ResponseEntity<>(successResponse, HttpStatus.OK);
 			
 		} catch (IllegalArgumentException e) {
@@ -135,6 +157,7 @@ public class UserController {
 	        
 	    }
 	}
+
 	
 	//////////////////////////////////////// FIND USER GROUPS //////////////////////////////////////////////////////////////////////////
 
@@ -225,7 +248,6 @@ public class UserController {
 			existingUser.setLastName(updatedUser.getLastName());
 			existingUser.setEmail(updatedUser.getEmail());
 			existingUser.setRole(updatedUser.getRole());
-			existingUser.setUserGroups(updatedUser.getUserGroups());
 
 			CustomResponse<User> successResponse = new CustomResponse<User>(userDetailsService.saveUser(existingUser), "User updated successfully", 200);
 	        return new ResponseEntity<>(successResponse, HttpStatus.OK);
@@ -277,6 +299,82 @@ public class UserController {
 	        
 	    }
      
+    }
+	
+	//////////////////////////////////////// REMOVE USER GROUP FROM USER //////////////////////////////////////////////////////////////////////////
+	
+	@PreAuthorize("hasRole('ADMIN')")
+	@PostMapping("/removeUserGroup/{userId}/{groupId}")
+
+    public ResponseEntity<?> removeUserGroup(@PathVariable String userId, @PathVariable String groupId) {
+		
+		try {
+			
+			User user= userDetailsService.getUserById(userId);
+
+	        UserGroup userGroup = usergroupdetailservice.getUserGroupById(groupId);
+
+	        if (user != null && userGroup != null) {
+
+	            user.getUserGroups().remove(userGroup);
+
+	            userDetailsService.saveUser(user);
+
+	        }
+
+	        CustomResponse<String> successResponse = new CustomResponse<String>("", "User group removed successfully", 200);
+	        return new ResponseEntity<>(successResponse, HttpStatus.OK);
+			
+		}catch (IllegalArgumentException e) {
+
+	        CustomResponse<String> errorResponse = new CustomResponse<>("", "Bad Request: " + e.getMessage(), 400);
+	        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	        
+	    } catch (Exception e) {
+
+	        CustomResponse<String> errorResponse = new CustomResponse<>("", "Internal Server Error", 500);
+	        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+	        
+	    }
+
+    }
+	
+	//////////////////////////////////////// ADD USER GROUP TO USER ///////////////////////////////////////////////////////////
+	
+	@PreAuthorize("hasRole('ADMIN')")
+	@PostMapping("/addUserGroup/{userId}/{groupId}")
+
+    public ResponseEntity<?> addUser(@PathVariable String userId, @PathVariable String groupId) {
+		
+		try {
+			
+			User user= userDetailsService.getUserById(userId);
+
+	        UserGroup userGroup = usergroupdetailservice.getUserGroupById(groupId);
+
+	        if (user != null && userGroup != null) {
+
+	        	user.getUserGroups().add(userGroup);
+
+	            userDetailsService.saveUser(user);
+
+	        }
+
+	        CustomResponse<String> successResponse = new CustomResponse<String>("", "User group addedd successfully", 200);
+	        return new ResponseEntity<>(successResponse, HttpStatus.OK);
+			
+		}catch (IllegalArgumentException e) {
+
+	        CustomResponse<String> errorResponse = new CustomResponse<>("", "Bad Request: " + e.getMessage(), 400);
+	        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	        
+	    } catch (Exception e) {
+
+	        CustomResponse<String> errorResponse = new CustomResponse<>("", "Internal Server Error", 500);
+	        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+	        
+	    }
+
     }
 	
 

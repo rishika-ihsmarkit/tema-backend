@@ -38,7 +38,6 @@ public class User {
 	private String username;
 	
 	@NotNull
-//	@Min(5)
 	private String firstName;
 	
 	@NotNull
@@ -49,6 +48,7 @@ public class User {
 	private String email;
 	
 	@NotNull
+	@JsonProperty(access = Access.WRITE_ONLY)
 	private String password;
 	
 	@NotNull

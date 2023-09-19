@@ -26,57 +26,50 @@ import com.osttra.to.CustomUserDetails;
 import com.osttra.to.JWTRequest;
 import com.osttra.to.JWTResponse;
 
-
-
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin
 public class AuthController {
-	
+
 	@Autowired
-	  AuthenticationManager authenticationManager;
+	AuthenticationManager authenticationManager;
 
-	  @Autowired
-	  UserRepository userRepository;
+	@Autowired
+	UserRepository userRepository;
 
-	  @Autowired
-	  PasswordEncoder encoder;
+	@Autowired
+	PasswordEncoder encoder;
 
-	  @Autowired
-	  JwtUtils jwtUtils;
+	@Autowired
+	JwtUtils jwtUtils;
 
-	  @PostMapping("/signin")
-	  public ResponseEntity<?> authenticateUser(@Valid @RequestBody JWTRequest loginRequest) {
+	@PostMapping("/signin")
+	public ResponseEntity<?> authenticateUser(@Valid @RequestBody JWTRequest loginRequest) {
 
-	    Authentication authentication = authenticationManager.authenticate(
-	        new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-	    
-	    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal(); 
+		Authentication authentication = authenticationManager.authenticate(
+				new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-	    SecurityContextHolder.getContext().setAuthentication(authentication);
-	    String jwt = jwtUtils.generateToken(userDetails);
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-	    List<String> roles = userDetails.getAuthorities().stream()
-	        .map(item -> item.getAuthority())
-	        .collect(Collectors.toList());
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+		String jwt = jwtUtils.generateToken(userDetails);
 
-	    return ResponseEntity.ok(new JWTResponse(jwt,userDetails.getUsername(), roles));
-	  }
-	  
-	  
-	  @RestController
-	    @RequestMapping("/logout")
-	    public class LogoutController {
-	        @PostMapping
-	        public ResponseEntity<String> logout() {
-	            try {
-	                SecurityContextHolder.clearContext();
-	                return new ResponseEntity<>("Logged out successfully", HttpStatus.OK);
-	            } catch (Exception e) {
-	                e.printStackTrace();
-	                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-	            }
-	        }
-	    }
+		List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
+				.collect(Collectors.toList());
+
+		return ResponseEntity.ok(new JWTResponse(jwt, userDetails.getUsername(), roles));
+	}
+
+	@PostMapping("/logout")
+	public ResponseEntity<String> logout() {
+		try {
+			SecurityContextHolder.clearContext();
+			return new ResponseEntity<>("Logged out successfully", HttpStatus.OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		}
+
+	}
 
 }

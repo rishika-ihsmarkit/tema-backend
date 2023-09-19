@@ -24,12 +24,12 @@ public class usergroupdetailservice {
         return userGroupRepository.findAll();
     }
 	
-	public UserGroup getUserGroupById(Long usergroupid) {
+	public UserGroup getUserGroupById(String usergroupid) {
         return userGroupRepository.findById(usergroupid).orElse(null);
     }
 
 	@Transactional
-    public void deleteUserGroup(Long usergroupid) {
+    public void deleteUserGroup(String usergroupid) {
 		userGroupRepository.deleteById(usergroupid);
     }
 
